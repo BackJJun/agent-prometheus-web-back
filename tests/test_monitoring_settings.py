@@ -158,3 +158,55 @@ def test_monitoring_and_settings_return_inserted_rows() -> None:
         )
     finally:
         asyncio.run(_cleanup_settings_rows())
+
+
+def test_llm_provider_and_model_can_be_registered() -> None:
+    asyncio.run(_cleanup_settings_rows())
+    client = TestClient(app)
+    provider_name = f"{TEST_SETTINGS_PREFIX}-{uuid4()}"
+
+    try:
+        provider_response = client.post(
+            "/api/settings/llm-providers",
+            headers=_auth_headers(),
+            json={
+                "provider": provider_name,
+                "base_url": "http://llm.local",
+                "api_key": "secret-test-key",
+                "status": "active",
+            },
+        )
+
+        assert provider_response.status_code == 201
+        provider = provider_response.json()
+        assert provider["provider"] == provider_name
+        assert provider["base_url"] == "http://llm.local"
+        assert "api_key" not in provider
+        assert "config" not in provider
+
+        model_response = client.post(
+            "/api/settings/llm-models",
+            headers=_auth_headers(),
+            json={
+                "provider_id": provider["id"],
+                "name": "Qwen Coder",
+                "model_key": "qwen-coder",
+                "context_window": 32768,
+                "enabled": True,
+                "status": "active",
+            },
+        )
+
+        assert model_response.status_code == 201
+        model = model_response.json()
+        assert model["provider_id"] == provider["id"]
+        assert model["name"] == "Qwen Coder"
+        assert model["model_key"] == "qwen-coder"
+        assert model["context_window"] == 32768
+        assert model["enabled"] is True
+
+        models = client.get("/api/settings/llm-models", headers=_auth_headers())
+        assert models.status_code == 200
+        assert any(item["model_key"] == "qwen-coder" for item in models.json()["items"])
+    finally:
+        asyncio.run(_cleanup_settings_rows())

@@ -13,6 +13,10 @@ class Settings(BaseSettings):
         default="http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000",
         alias="BACKEND_CORS_ORIGINS",
     )
+    backend_cors_origin_regex: str | None = Field(
+        default=r"http://192\.168\.\d{1,3}\.\d{1,3}:5173",
+        alias="BACKEND_CORS_ORIGIN_REGEX",
+    )
     database_url: str = Field(
         default="postgresql+asyncpg://crux:crux5748%23%4012@localhost:5432/agent_pmts",
         alias="DATABASE_URL",
