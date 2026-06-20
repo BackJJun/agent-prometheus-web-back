@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: prometheus-web-postgres
+    environment:
+      POSTGRES_DB: agent_pmts
+      POSTGRES_USER: crux
+      POSTGRES_PASSWORD: crux5748#@12
+    ports:
+      - "5432:5432"
+    volumes:
+      - prometheus-web-postgres-data:/var/lib/postgresql/data
+      - ./init_database.sql:/docker-entrypoint-initdb.d/001-init_database.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crux -d agent_pmts"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.2
+    container_name: prometheus-web-keycloak
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    ports:
+      - "18080:8080"
+    volumes:
+      - ./keycloak/agent-pmts-realm.json:/opt/keycloak/data/import/agent-pmts-realm.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  prometheus-web-postgres-data:

@@ -16,8 +16,8 @@ def _get_keycloak_access_token() -> str:
         data={
             "grant_type": "password",
             "client_id": "agent-pmts-web",
-            "username": "dev@prometheus.local",
-            "password": "dev5748#@12",
+            "username": "admin",
+            "password": "1234",
             "scope": "openid profile email",
         },
         timeout=10,

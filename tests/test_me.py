@@ -28,8 +28,8 @@ def _get_keycloak_access_token() -> str:
         data={
             "grant_type": "password",
             "client_id": "agent-pmts-web",
-            "username": "dev@prometheus.local",
-            "password": "dev5748#@12",
+            "username": "admin",
+            "password": "1234",
             "scope": "openid profile email",
         },
         timeout=10,
@@ -62,7 +62,7 @@ def test_me_maps_keycloak_user_id_to_internal_user_id() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["id"] == payload["sub"]
-    assert body["email"] == "dev@prometheus.local"
+    assert body["email"] == "admin"
     assert body["auth"]["issuer"] == "http://localhost:18080/realms/agent-pmts"
     assert body["auth"]["subject"] == payload["sub"]
     assert asyncio.run(_fetch_user_id(str(payload["sub"]))) == payload["sub"]

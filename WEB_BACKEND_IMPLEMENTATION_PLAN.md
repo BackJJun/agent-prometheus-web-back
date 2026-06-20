@@ -22,8 +22,8 @@
 | Keycloak realm | agent-pmts |
 | Frontend client | agent-pmts-web |
 | Backend audience | agent-pmts-api |
-| Test user | dev@prometheus.local |
-| Test password | dev5748#@12 |
+| Test user | admin |
+| Test password | 1234 |
 
 ## 기본 원칙
 

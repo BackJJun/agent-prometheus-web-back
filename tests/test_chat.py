@@ -16,8 +16,8 @@ def _get_keycloak_access_token() -> str:
         data={
             "grant_type": "password",
             "client_id": "agent-pmts-web",
-            "username": "dev@prometheus.local",
-            "password": "dev5748#@12",
+            "username": "admin",
+            "password": "1234",
             "scope": "openid profile email",
         },
         timeout=10,
@@ -125,6 +125,44 @@ def test_web_chat_message_create_stores_user_message_and_assistant_placeholder()
         assert messages_response.status_code == 200
         messages = messages_response.json()["items"]
         assert [message["role"] for message in messages] == ["user", "assistant"]
+    finally:
+        asyncio.run(_cleanup_chat_rows())
+
+
+def test_web_chat_message_streams_markdown_and_stores_assistant_response() -> None:
+    asyncio.run(_cleanup_chat_rows())
+    client = TestClient(app)
+    title = f"{TEST_TITLE_PREFIX} stream {uuid4()}"
+
+    try:
+        session_response = client.post(
+            "/api/chat/sessions", json={"title": title}, headers=_auth_headers()
+        )
+        session_id = session_response.json()["id"]
+
+        with client.stream(
+            "POST",
+            f"/api/chat/sessions/{session_id}/messages/stream",
+            json={"content": "Summarize the project status.", "provider": "fallback"},
+            headers=_auth_headers(),
+        ) as response:
+            assert response.status_code == 200
+            lines = [line for line in response.iter_lines() if line]
+
+        assert any('"type": "messages"' in line for line in lines)
+        assert any('"type": "delta"' in line for line in lines)
+        assert any('"type": "done"' in line for line in lines)
+
+        messages_response = client.get(
+            f"/api/chat/sessions/{session_id}/messages", headers=_auth_headers()
+        )
+        assert messages_response.status_code == 200
+        messages = messages_response.json()["items"]
+        assistant = messages[-1]
+        assert assistant["role"] == "assistant"
+        assert assistant["status"] == "completed"
+        assert assistant["content"].startswith("## 답변")
+        assert "- 요청: Summarize the project status." in assistant["content"]
     finally:
         asyncio.run(_cleanup_chat_rows())
 

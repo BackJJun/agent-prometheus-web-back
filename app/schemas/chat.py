@@ -10,6 +10,8 @@ class ChatSessionCreateRequest(BaseModel):
 
 class ChatMessageCreateRequest(BaseModel):
     content: str = Field(min_length=1)
+    provider: str | None = Field(default=None, max_length=80)
+    model: str | None = Field(default=None, max_length=200)
 
 
 class ChatSessionResponse(BaseModel):

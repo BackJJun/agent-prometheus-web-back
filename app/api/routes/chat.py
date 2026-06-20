@@ -2,6 +2,7 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 
 from app.api.deps import get_current_user
 from app.schemas.chat import (
@@ -19,6 +20,7 @@ from app.services.chat_service import (
     get_chat_session,
     list_chat_messages,
     list_chat_sessions,
+    stream_chat_markdown,
 )
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
@@ -90,3 +92,22 @@ async def post_message(
     if result is None:
         raise HTTPException(status_code=404, detail="Chat session not found")
     return result
+
+
+@router.post("/sessions/{session_id}/messages/stream")
+async def post_message_stream(
+    session_id: UUID,
+    request: ChatMessageCreateRequest,
+    current_user: dict[str, Any] = Depends(get_current_user),
+) -> StreamingResponse:
+    stream = await stream_chat_markdown(
+        _user_id(current_user),
+        session_id,
+        request.content,
+        request.provider,
+        request.model,
+    )
+    if stream is None:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+
+    return StreamingResponse(stream, media_type="application/x-ndjson")
