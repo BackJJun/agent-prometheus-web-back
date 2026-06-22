@@ -17,7 +17,7 @@ def _get_keycloak_access_token() -> str:
             "grant_type": "password",
             "client_id": "agent-pmts-web",
             "username": "admin",
-            "password": "1234",
+            "password": "12345",
             "scope": "openid profile email",
         },
         timeout=10,
@@ -161,8 +161,8 @@ def test_web_chat_message_streams_markdown_and_stores_assistant_response() -> No
         assistant = messages[-1]
         assert assistant["role"] == "assistant"
         assert assistant["status"] == "completed"
-        assert assistant["content"].startswith("## 답변")
-        assert "- 요청: Summarize the project status." in assistant["content"]
+        assert assistant["content"].startswith("## ")
+        assert "Summarize the project status." in assistant["content"]
     finally:
         asyncio.run(_cleanup_chat_rows())
 

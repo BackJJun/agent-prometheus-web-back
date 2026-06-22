@@ -18,7 +18,7 @@ def _get_keycloak_access_token() -> str:
             "grant_type": "password",
             "client_id": "agent-pmts-web",
             "username": "admin",
-            "password": "1234",
+            "password": "12345",
             "scope": "openid profile email",
         },
         timeout=10,

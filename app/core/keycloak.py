@@ -13,6 +13,49 @@ class TokenVerificationError(Exception):
     pass
 
 
+class KeycloakTokenExchangeError(Exception):
+    pass
+
+
+async def _exchange_tokens(data: dict[str, str]) -> dict[str, Any]:
+    settings = get_settings()
+    token_url = f"{settings.keycloak_issuer}/protocol/openid-connect/token"
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            response = await client.post(token_url, data=data)
+    except httpx.HTTPError as exc:
+        raise KeycloakTokenExchangeError("Keycloak token endpoint unavailable") from exc
+
+    if response.status_code >= 400:
+        raise KeycloakTokenExchangeError("Keycloak token exchange failed")
+
+    return response.json()
+
+
+async def exchange_password_for_tokens(username: str, password: str) -> dict[str, Any]:
+    settings = get_settings()
+    return await _exchange_tokens(
+        {
+            "grant_type": "password",
+            "client_id": settings.keycloak_frontend_client_id,
+            "username": username,
+            "password": password,
+            "scope": "openid profile email",
+        }
+    )
+
+
+async def exchange_refresh_token(refresh_token: str) -> dict[str, Any]:
+    settings = get_settings()
+    return await _exchange_tokens(
+        {
+            "grant_type": "refresh_token",
+            "client_id": settings.keycloak_frontend_client_id,
+            "refresh_token": refresh_token,
+        }
+    )
+
+
 class KeycloakTokenVerifier:
     def __init__(self) -> None:
         self._jwks: dict[str, Any] | None = None
