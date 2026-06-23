@@ -5,6 +5,7 @@ import asyncpg
 import httpx
 from fastapi.testclient import TestClient
 
+from app.api.deps import get_current_user
 from app.main import app
 
 TEST_SETTINGS_PREFIX = "pytest-settings"
@@ -82,7 +83,7 @@ async def _insert_monitoring_and_settings_fixture() -> None:
             slug,
         )
         await connection.execute(
-            "insert into monitoring_events (workspace_id, level, service, message, payload) values ($1, 'warn', $2, '테스트 경고', '{}'::jsonb)",
+            "insert into monitoring_events (workspace_id, level, service, message, payload) values ($1, 'warn', $2, '?뚯뒪??寃쎄퀬', '{}'::jsonb)",
             workspace_id,
             slug,
         )
@@ -134,7 +135,7 @@ def test_monitoring_and_settings_return_inserted_rows() -> None:
 
         events = client.get("/api/monitoring/events", headers=_auth_headers())
         assert events.status_code == 200
-        assert any(item["message"] == "테스트 경고" for item in events.json()["items"])
+        assert any(item["message"] == "?뚯뒪??寃쎄퀬" for item in events.json()["items"])
 
         health_checks = client.get("/api/monitoring/health-checks", headers=_auth_headers())
         assert health_checks.status_code == 200
@@ -210,3 +211,49 @@ def test_llm_provider_and_model_can_be_registered() -> None:
         assert any(item["model_key"] == "qwen-coder" for item in models.json()["items"])
     finally:
         asyncio.run(_cleanup_settings_rows())
+
+def test_bridge_status_route_returns_four_state_contract(monkeypatch) -> None:
+    async def fake_bridge_status() -> dict[str, object]:
+        return {
+            "status": "healthy",
+            "label": "??",
+            "description": "??? API? DB ????? ?? ?????.",
+            "bridge_base_url": "http://localhost:12345",
+            "latency_ms": 42,
+            "checked_at": "2026-06-23T01:00:00Z",
+            "api": {
+                "name": "api",
+                "status": "healthy",
+                "label": "??",
+                "latency_ms": 20,
+                "message": "?? ??",
+            },
+            "database": {
+                "name": "database",
+                "status": "healthy",
+                "label": "??",
+                "latency_ms": 42,
+                "message": "?? ??",
+            },
+        }
+
+    async def fake_current_user() -> dict[str, str]:
+        return {"id": "test-user"}
+
+    monkeypatch.setattr("app.api.routes.monitoring.fetch_bridge_status", fake_bridge_status)
+    app.dependency_overrides[get_current_user] = fake_current_user
+    client = TestClient(app)
+
+    try:
+        response = client.get("/api/monitoring/bridge/status")
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "healthy"
+    assert body["label"] == "??"
+    assert body["api"]["status"] == "healthy"
+    assert body["database"]["status"] == "healthy"
+
+

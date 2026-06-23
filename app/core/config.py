@@ -35,9 +35,14 @@ class Settings(BaseSettings):
         alias="KEYCLOAK_FRONTEND_CLIENT_ID",
     )
 
+    bridge_base_url: str | None = Field(default="http://localhost:12345", alias="BRIDGE_BASE_URL")
+    bridge_health_timeout_seconds: float = Field(default=2.0, alias="BRIDGE_HEALTH_TIMEOUT_SECONDS")
+    bridge_degraded_latency_ms: int = Field(default=2000, alias="BRIDGE_DEGRADED_LATENCY_MS")
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+

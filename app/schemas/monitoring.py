@@ -29,3 +29,21 @@ class ServiceHealthCheckResponse(BaseModel):
 
 class ServiceHealthCheckListResponse(BaseModel):
     items: list[ServiceHealthCheckResponse]
+class BridgeDependencyStatus(BaseModel):
+    name: str
+    status: str
+    label: str
+    latency_ms: int | None
+    message: str
+
+
+class BridgeStatusResponse(BaseModel):
+    status: str
+    label: str
+    description: str
+    bridge_base_url: str | None
+    latency_ms: int | None
+    checked_at: datetime
+    api: BridgeDependencyStatus
+    database: BridgeDependencyStatus
+
