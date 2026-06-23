@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     bridge_health_timeout_seconds: float = Field(default=2.0, alias="BRIDGE_HEALTH_TIMEOUT_SECONDS")
     bridge_degraded_latency_ms: int = Field(default=2000, alias="BRIDGE_DEGRADED_LATENCY_MS")
 
+    log_dir: str = Field(default="logs", alias="LOG_DIR")
+    log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
